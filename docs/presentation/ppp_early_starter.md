@@ -29,11 +29,11 @@ Dirt bikes face dust, high RPMs, crashes → neglected maintenance causes 80–9
 - Clogged air filter → power loss, abrasive wear  
 
 **Why important?** 
-Prevents costly rebuilds, mid-ride failures, enhances safety on KY trails
+Prevents costly rebuilds, mid-ride failures, enhances safety on
 
 ---
 
-## 2. Project Topic (Team)
+## 2. Project Topic
 
 **Software focus**  
 Build IoT app on ESP32 hardware:  
@@ -71,15 +71,14 @@ Use AI (Grok/Copilot) to accelerate both
 ## 4. Time Usage – Two Iterations
 
 **Iteration 1 (Sprint 1)**  
-Learn → build MVP  
+Learn → build 
 - Sensor reading/calibration  
 - WiFi → cloud data send  
 - Basic dashboard + thresholds  
 
 **Iteration 2 (Sprint 2)**  
 Full features  
-- Alerts (push/email)  
-- Secure TLS/auth  
+- Alerts (push/email)   
 - Trends, local buffering  
 - Vibration/dust testing  
 
@@ -88,6 +87,13 @@ Full features
 ## 5. Final Goal (End of Semester)
 
 - **Working prototype** mounted & demonstrated  
+- **Research paper**: show findings, bugs, fixes, and w
 - **Portfolio piece**: GitHub repo, code, schematics, demo video   
-- **Future extension** potential: vibration sensor, edge ML, LoRa
+- **Future extension** potential: vibration sensor
+  
+---
+
+## Questions?
+
+
 
