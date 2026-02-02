@@ -57,8 +57,7 @@ Secure IoT comms & cloud integration
 
 **Hardware**  
 ESP32 sensor interfacing & calibration  
-- Ultrasonic & differential pressure  
-- Vibration/noise filtering  
+- Ultrasonic & differential pressure    
 - 12V bike power regulation  
 
 ---
