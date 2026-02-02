@@ -43,19 +43,16 @@ Build IoT app on ESP32 hardware:
 
 **Hardware used**  
 - Sensors: ultrasonic (levels), differential pressure (air box)  
-- ESP32 + WiFi comms  
-- No actuators/motors in MVP  
-
-Sensor + communication + monitoring project
+- ESP32
+- Bluetooth   
 
 ---
 
 ## 3. Two Topics to Learn with AI
 
 **Software**  
-Secure IoT comms & cloud integration  
-- MQTT/TLS, API auth  
-- Blynk/ThingSpeak dashboard  
+Secure IoT comms & cloud integration   
+- Build dashboard  
 - Alert logic + buffering  
 
 **Hardware**  
@@ -64,8 +61,6 @@ ESP32 sensor interfacing & calibration
 - Vibration/noise filtering  
 - 12V bike power regulation  
 
-Use AI (Grok/Copilot) to accelerate both
-
 ---
 
 ## 4. Time Usage – Two Iterations
@@ -73,7 +68,6 @@ Use AI (Grok/Copilot) to accelerate both
 **Iteration 1 (Sprint 1)**  
 Learn → build 
 - Sensor reading/calibration  
-- WiFi → cloud data send  
 - Basic dashboard + thresholds  
 
 **Iteration 2 (Sprint 2)**  
