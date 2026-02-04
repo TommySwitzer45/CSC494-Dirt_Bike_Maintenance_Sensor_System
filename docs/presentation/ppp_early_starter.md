@@ -72,8 +72,7 @@ Learn → build
 **Iteration 2 (Sprint 2)**  
 Full features  
 - Alerts (push/email)   
-- Trends, local buffering  
-- Vibration/dust testing  
+- Trends 
 
 ---
 
