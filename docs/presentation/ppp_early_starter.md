@@ -9,7 +9,7 @@ style: |
   }
   h1 { font-size: 8em; }
   h2 { font-size: 4.5em; }
-  p, ul, ol { font-size: 2.1em; }
+  p, ul, ol { font-size: 2em; }
 ---
 
 # DirtBike Maintence System 
