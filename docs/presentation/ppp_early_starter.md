@@ -6,8 +6,8 @@ style: |
     font-size: 0.85em;   /* Try 0.8em–0.9em to start */
   }
   h1 { font-size: 8em; }
-  h2 { font-size: 4.5em; }
-  p, ul, ol { font-size: 2em; }
+  h2 { font-size: 4em; }
+  p, ul, ol { font-size: 2m; }
 ---
 
 # DirtBike Maintence System 
