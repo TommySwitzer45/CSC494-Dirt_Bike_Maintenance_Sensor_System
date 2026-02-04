@@ -38,7 +38,6 @@ Prevents costly rebuilds, mid-ride failures, enhances safety on
 **Software focus**  
 Build IoT app on ESP32 hardware:  
 - Real-time sensor data processing  
-- Secure cloud transmission  
 - Mobile dashboard + alerts  
 
 **Hardware used**  
