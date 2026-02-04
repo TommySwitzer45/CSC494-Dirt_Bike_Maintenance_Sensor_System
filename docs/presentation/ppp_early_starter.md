@@ -1,8 +1,6 @@
 ---
 marp: true
-theme: gaia
 paginate: true
-backgroundColor: #f0f4f8
 style: |
   section {
     font-size: 0.85em;   /* Try 0.8em–0.9em to start */
