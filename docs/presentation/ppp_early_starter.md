@@ -12,8 +12,7 @@ style: |
 
 # DirtBike Maintence System 
 IoT Predictive Maintenance for Dirt Bikes
-
-CSC 494-001  
+  
 Tommy Switzer
 
 ---
