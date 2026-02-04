@@ -35,29 +35,33 @@ Prevents costly rebuilds, mid-ride failures, enhances safety on
 
 ## 2. Project Topic
 
-**Software focus**  
-Build IoT app on ESP32 hardware:  
-- Real-time sensor data processing  
-- Mobile dashboard + alerts  
+**Software Focus**  
+Build IoT application on ESP32 hardware:  
+- Real-time sensor data processing & calibration    
+- Mobile-friendly dashboard with gauges, trends & alerts  
 
-**Hardware used**  
-- Sensors: ultrasonic (levels), differential pressure (air box)  
-- ESP32
-- Bluetooth   
+**Hardware Used**  
+- Core: ESP32 microcontroller (WiFi + Bluetooth)  
+- Sensors: Waterproof ultrasonic (oil/coolant levels) 
+- Differential pressure sensor (air-box restriction)
+- Power: DC-DC converter from 12V bike battery  
 
+**Communication**  
+- WiFi: Cloud sync for historical data when in range  
+- Bluetooth: Direct local connection to smartphone app for live dashboards, gauges & immediate alerts (offline on trails)
+  
 ---
 
 ## 3. Two Topics to Learn with AI
 
 **Software**  
-Secure IoT comms & cloud integration   
+Build IoT app on ESP32 hardware:  
 - Build dashboard  
 - Alert logic + buffering  
 
 **Hardware**  
 ESP32 sensor interfacing & calibration  
-- Ultrasonic & differential pressure    
-- 12V bike power regulation  
+- Ultrasonic & differential pressure     
 
 ---
 
