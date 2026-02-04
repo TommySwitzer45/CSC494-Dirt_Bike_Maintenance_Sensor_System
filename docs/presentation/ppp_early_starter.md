@@ -81,7 +81,7 @@ Full features
 - **Working prototype** mounted & demonstrated  
 - **Research paper**: show findings, bugs, fixes, and w
 - **Portfolio piece**: GitHub repo, code, schematics, demo video   
-- **Future extension** potential: vibration sensor
+- **Future extension** potential: Make it able to be use on bikes with no electric start (no battery)
   
 ---
 
