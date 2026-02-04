@@ -48,7 +48,7 @@ Build IoT application on ESP32 hardware:
 
 **Communication**  
 - WiFi: Cloud sync for historical data when in range  
-- Bluetooth: Direct local connection to smartphone app for live dashboards, gauges & immediate alerts (offline on trails)
+- Bluetooth: Connection to smartphone app for dashboards, gauges, and alerts
   
 ---
 
