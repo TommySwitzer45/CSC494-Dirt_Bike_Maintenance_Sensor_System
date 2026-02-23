@@ -1,0 +1,375 @@
+/*
+ * ============================================================
+ *  CSC494 — Dirt Bike Maintenance Sensor System
+ *  ESP32 Firmware  |  Arduino / C++
+ *  Transport: Bluetooth Low Energy (BLE) ONLY
+ * ============================================================
+ *  Sensors
+ *    • MPXV7002DP  — differential pressure (air-box / air filter)
+ *    • JSN-SR04T   — waterproof ultrasonic (oil level)
+ *    • JSN-SR04T   — waterproof ultrasonic (coolant level)
+ *
+ *  How it works
+ *    The ESP32 advertises as "DirtBike_001" over BLE.
+ *    A mobile dashboard (nRF Connect, a custom app, etc.) connects
+ *    and subscribes to two BLE characteristics:
+ *
+ *      TELEM  — notified every SAMPLE_INTERVAL_MS with a JSON
+ *               payload containing all sensor values.
+ *      ALERT  — notified instantly when any threshold is crossed.
+ *
+ *    No Wi-Fi credentials, no MQTT broker, no SD card needed.
+ *    The LED blinks slowly while advertising, stays solid when
+ *    a dashboard is connected.
+ * ============================================================
+ */
+
+// ─── Libraries ───────────────────────────────────────────────
+#include <Arduino.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+#include <ArduinoJson.h>
+
+// ─── Device identity ─────────────────────────────────────────
+#define DEVICE_ID  "DirtBike_001"
+
+// ─── Pin definitions ─────────────────────────────────────────
+// MPXV7002DP Vout → GPIO34 (ADC1_CH6 — input-only pin, safe for 3.3 V)
+#define PRESSURE_ADC_PIN   34
+
+// Oil level — JSN-SR04T waterproof ultrasonic
+#define OIL_TRIG_PIN       25
+#define OIL_ECHO_PIN       26
+
+// Coolant level — JSN-SR04T waterproof ultrasonic
+#define COOL_TRIG_PIN      27
+#define COOL_ECHO_PIN      14
+
+// Onboard status LED
+#define LED_PIN             2
+
+// ─── MPXV7002DP transfer-function constants ──────────────────
+//
+//  Datasheet equation:  Vout = Vs × (0.057 × P + 0.5)
+//  Inverted:            P(kPa) = (Vout/Vs − 0.5) / 0.057
+//
+//  Sensor powered at 3.3 V so Vout stays within the ESP32 ADC range.
+//  Pressure range: −2 kPa (maximum restriction) … +2 kPa
+//
+#define ADC_MAX            4095.0f   // 12-bit ESP32 ADC
+#define V_SUPPLY           3.3f      // sensor supply voltage (V)
+#define MPXV7002_SENS      0.057f    // sensitivity  (dimensionless / kPa)
+#define MPXV7002_OFFSET    0.5f      // Vout/Vs ratio at 0 kPa
+#define PRESSURE_SAMPLES   16        // ADC oversampling — reduces noise
+
+// Alert thresholds  (negative = restriction; more negative = worse clog)
+#define PRESSURE_WARN_KPA  -0.6f     // yellow — clean filter soon
+#define PRESSURE_CRIT_KPA  -1.0f     // red    — stop, clean immediately
+
+// ─── Ultrasonic / tank geometry ──────────────────────────────
+//  Sensor sits at the TOP of the reservoir pointing DOWN.
+//  Short reading = tank full.  Long reading = tank empty.
+//  Adjust these values to match your specific bike's tank dimensions.
+#define OIL_EMPTY_MM       180
+#define OIL_FULL_MM         30
+#define COOL_EMPTY_MM      200
+#define COOL_FULL_MM        25
+#define ULTRASONIC_SAMPLES   5       // odd count for clean median
+
+// Level alert thresholds (%)
+#define OIL_WARN_PCT        25
+#define OIL_CRIT_PCT        10
+#define COOL_WARN_PCT       30
+#define COOL_CRIT_PCT       15
+
+// ─── Timing ──────────────────────────────────────────────────
+#define SAMPLE_INTERVAL_MS   500     // send BLE notification every 500 ms
+
+// ─── BLE UUIDs ───────────────────────────────────────────────
+//  Standard 128-bit UUIDs — change if you have a registered service UUID.
+#define BLE_SERVICE_UUID    "12345678-1234-1234-1234-123456789abc"
+#define BLE_TELEM_UUID      "12345678-1234-1234-1234-123456789abd"   // telemetry
+#define BLE_ALERT_UUID      "12345678-1234-1234-1234-123456789abe"   // alerts
+
+// ─── Globals ─────────────────────────────────────────────────
+BLECharacteristic *pTelemChar  = nullptr;
+BLECharacteristic *pAlertChar  = nullptr;
+bool               bleConnected = false;
+
+// ─── Sensor data ─────────────────────────────────────────────
+struct SensorReading {
+    float         pressureKpa;
+    int           oilPct;
+    int           coolantPct;
+    unsigned long uptimeMs;
+};
+
+// ─── Forward declarations ────────────────────────────────────
+void   setupBLE();
+float  readPressure();
+long   readUltrasonicMm(uint8_t trigPin, uint8_t echoPin);
+int    distanceToPercent(long distMm, int emptyMm, int fullMm);
+String buildJSON(const SensorReading &r);
+void   checkAndSendAlerts(const SensorReading &r);
+void   sendAlert(const char *level, const char *sensor, const char *msg);
+
+// ════════════════════════════════════════════════════════════
+//  BLE CONNECTION CALLBACKS
+// ════════════════════════════════════════════════════════════
+class BLECallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer *) override {
+        bleConnected = true;
+        digitalWrite(LED_PIN, HIGH);          // solid LED = dashboard connected
+        Serial.println("[BLE] Dashboard connected");
+    }
+    void onDisconnect(BLEServer *) override {
+        bleConnected = false;
+        digitalWrite(LED_PIN, LOW);
+        BLEDevice::startAdvertising();        // re-advertise automatically
+        Serial.println("[BLE] Dashboard disconnected — re-advertising");
+    }
+};
+
+// ════════════════════════════════════════════════════════════
+//  SETUP
+// ════════════════════════════════════════════════════════════
+void setup() {
+    Serial.begin(115200);
+    Serial.println("\n=== Dirt Bike Sensor System (BLE only) ===");
+
+    // GPIO
+    pinMode(LED_PIN,       OUTPUT);
+    pinMode(OIL_TRIG_PIN,  OUTPUT);
+    pinMode(OIL_ECHO_PIN,  INPUT);
+    pinMode(COOL_TRIG_PIN, OUTPUT);
+    pinMode(COOL_ECHO_PIN, INPUT);
+
+    // ADC for MPXV7002DP
+    analogReadResolution(12);            // 0–4095
+    analogSetPinAttenuation(PRESSURE_ADC_PIN, ADC_11db);  // full 0–3.3 V range on pressure pin
+
+
+    // BLE
+    setupBLE();
+
+    // Boot blink
+    for (int i = 0; i < 3; i++) {
+        digitalWrite(LED_PIN, HIGH); delay(150);
+        digitalWrite(LED_PIN, LOW);  delay(150);
+    }
+
+    Serial.println("[BOOT] Advertising as \"" DEVICE_ID "\" — waiting for dashboard\n");
+}
+
+// ════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ════════════════════════════════════════════════════════════
+void loop() {
+
+    // Blink slowly while no dashboard is connected
+    if (!bleConnected) {
+        digitalWrite(LED_PIN, HIGH); delay(100);
+        digitalWrite(LED_PIN, LOW);  delay(900);
+        return;
+    }
+
+    // ── Read all sensors ────────────────────────────────────
+    SensorReading r;
+    r.uptimeMs    = millis();
+    r.pressureKpa = readPressure();
+    r.oilPct      = distanceToPercent(
+                        readUltrasonicMm(OIL_TRIG_PIN, OIL_ECHO_PIN),
+                        OIL_EMPTY_MM, OIL_FULL_MM);
+    r.coolantPct  = distanceToPercent(
+                        readUltrasonicMm(COOL_TRIG_PIN, COOL_ECHO_PIN),
+                        COOL_EMPTY_MM, COOL_FULL_MM);
+
+    // ── Serial debug ────────────────────────────────────────
+    Serial.printf("[SENSOR] delta_P=%.3f kPa | Oil=%d%% | Coolant=%d%%\n",
+                  r.pressureKpa, r.oilPct, r.coolantPct);
+
+    // ── BLE telemetry notify ─────────────────────────────────
+    String json = buildJSON(r);
+    pTelemChar->setValue(json.c_str());
+    pTelemChar->notify();
+
+    // ── Threshold alerts ─────────────────────────────────────
+    checkAndSendAlerts(r);
+
+    delay(SAMPLE_INTERVAL_MS);
+}
+
+// ════════════════════════════════════════════════════════════
+//  MPXV7002DP — PRESSURE READING
+// ════════════════════════════════════════════════════════════
+/*
+ *  Wiring (APM2.5 breakout → ESP32)
+ *  ──────────────────────────────────────────────────────────
+ *  Sensor Vs   → ESP32 3V3       ← MUST be 3.3 V, not 5 V
+ *  Sensor GND  → GND
+ *  Sensor Vout → GPIO 34         (ADC1_CH6, input-only)
+ *  Port P1     → air box BEFORE the air filter  (upstream / clean side)
+ *  Port P2     → air box AFTER  the air filter  (downstream / engine side)
+ *
+ *  Transfer function applied:
+ *    adc_avg → Vout = (adc_avg / 4095) × 3.3
+ *    P(kPa)  = (Vout / 3.3 − 0.5) / 0.057
+ *
+ *  16 ADC samples are averaged per reading to reduce ESP32 ADC noise.
+ */
+float readPressure() {
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i < PRESSURE_SAMPLES; i++) {
+        sum += analogRead(PRESSURE_ADC_PIN);
+        delayMicroseconds(200);
+    }
+    float adcAvg = (float)sum / PRESSURE_SAMPLES;
+    float vout   = (adcAvg / ADC_MAX) * V_SUPPLY;
+    float pKpa   = (vout / V_SUPPLY - MPXV7002_OFFSET) / MPXV7002_SENS;
+    return constrain(pKpa, -2.0f, 2.0f);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ULTRASONIC — OIL & COOLANT LEVELS
+// ════════════════════════════════════════════════════════════
+/*
+ *  JSN-SR04T Echo pin outputs 5 V logic.
+ *  Protect GPIO with a voltage divider on Echo:
+ *    Echo → 1 kΩ → node → GPIO pin
+ *                   node → 2 kΩ → GND
+ */
+long readUltrasonicMm(uint8_t trigPin, uint8_t echoPin) {
+    long s[ULTRASONIC_SAMPLES];
+
+    for (int i = 0; i < ULTRASONIC_SAMPLES; i++) {
+        digitalWrite(trigPin, LOW);
+        delayMicroseconds(4);
+        digitalWrite(trigPin, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(trigPin, LOW);
+
+        long dur = pulseIn(echoPin, HIGH, 30000UL);
+        s[i] = (dur > 0) ? (dur * 10L / 58L) : 9999L;   // µs → mm
+        delay(25);
+    }
+
+    // Insertion sort → return median
+    for (int i = 1; i < ULTRASONIC_SAMPLES; i++) {
+        long key = s[i]; int j = i - 1;
+        while (j >= 0 && s[j] > key) { s[j+1] = s[j]; j--; }
+        s[j+1] = key;
+    }
+    return s[ULTRASONIC_SAMPLES / 2];
+}
+
+int distanceToPercent(long distMm, int emptyMm, int fullMm) {
+    if (distMm >= emptyMm) return 0;
+    if (distMm <= fullMm)  return 100;
+    return (int)(100.0f * (emptyMm - distMm) / (float)(emptyMm - fullMm));
+}
+
+// ════════════════════════════════════════════════════════════
+//  ALERT LOGIC
+// ════════════════════════════════════════════════════════════
+void checkAndSendAlerts(const SensorReading &r) {
+    if      (r.pressureKpa <= PRESSURE_CRIT_KPA)
+        sendAlert("CRITICAL", "AIR",     "Air filter CRITICALLY clogged — stop and clean now!");
+    else if (r.pressureKpa <= PRESSURE_WARN_KPA)
+        sendAlert("WARNING",  "AIR",     "Air filter restricted — clean filter soon.");
+
+    if      (r.oilPct <= OIL_CRIT_PCT)
+        sendAlert("CRITICAL", "OIL",     "OIL CRITICALLY LOW — stop engine immediately!");
+    else if (r.oilPct <= OIL_WARN_PCT)
+        sendAlert("WARNING",  "OIL",     "Oil low — top up soon.");
+
+    if      (r.coolantPct <= COOL_CRIT_PCT)
+        sendAlert("CRITICAL", "COOLANT", "COOLANT CRITICALLY LOW — overheating risk!");
+    else if (r.coolantPct <= COOL_WARN_PCT)
+        sendAlert("WARNING",  "COOLANT", "Coolant low — refill before next ride.");
+}
+
+void sendAlert(const char *level, const char *sensor, const char *msg) {
+    Serial.printf("[ALERT][%s][%s] %s\n", level, sensor, msg);
+    StaticJsonDocument<160> doc;
+    doc["level"]  = level;
+    doc["sensor"] = sensor;
+    doc["msg"]    = msg;
+    doc["ts"]     = millis();
+    String out;
+    serializeJson(doc, out);
+    pAlertChar->setValue(out.c_str());
+    pAlertChar->notify();
+}
+
+// ════════════════════════════════════════════════════════════
+//  JSON TELEMETRY PAYLOAD
+// ════════════════════════════════════════════════════════════
+/*
+ *  Example BLE TELEM notification payload:
+ *  {
+ *    "id":           "DirtBike_001",
+ *    "ts":           12450,
+ *    "pKpa":         -0.312,
+ *    "filterStatus": "OK",
+ *    "oilPct":       78,
+ *    "coolPct":      91
+ *  }
+ */
+String buildJSON(const SensorReading &r) {
+    StaticJsonDocument<200> doc;
+    doc["id"]   = DEVICE_ID;
+    doc["ts"]   = r.uptimeMs;
+    doc["pKpa"] = serialized(String(r.pressureKpa, 3));
+
+    if      (r.pressureKpa <= PRESSURE_CRIT_KPA) doc["filterStatus"] = "CRITICAL";
+    else if (r.pressureKpa <= PRESSURE_WARN_KPA) doc["filterStatus"] = "WARNING";
+    else                                          doc["filterStatus"] = "OK";
+
+    doc["oilPct"]  = r.oilPct;
+    doc["coolPct"] = r.coolantPct;
+
+    String out;
+    serializeJson(doc, out);
+    return out;
+}
+
+// ════════════════════════════════════════════════════════════
+//  BLE SETUP
+// ════════════════════════════════════════════════════════════
+void setupBLE() {
+    BLEDevice::init(DEVICE_ID);
+    BLEServer  *pServer  = BLEDevice::createServer();
+    pServer->setCallbacks(new BLECallbacks());
+
+    BLEService *pService = pServer->createService(BLE_SERVICE_UUID);
+
+    // Telemetry — READ + NOTIFY
+    pTelemChar = pService->createCharacteristic(
+        BLE_TELEM_UUID,
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+    );
+    pTelemChar->addDescriptor(new BLE2902());
+
+    // Alerts — READ + NOTIFY
+    pAlertChar = pService->createCharacteristic(
+        BLE_ALERT_UUID,
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+    );
+    pAlertChar->addDescriptor(new BLE2902());
+
+    pService->start();
+
+    BLEAdvertising *pAdv = BLEDevice::getAdvertising();
+    pAdv->addServiceUUID(BLE_SERVICE_UUID);
+    pAdv->setScanResponse(true);
+    pAdv->setMinPreferred(0x06);   // improves iOS connection reliability
+    BLEDevice::startAdvertising();
+
+    Serial.println("[BLE] Service started");
+    Serial.printf( "[BLE] Advertising as  : %s\n",        DEVICE_ID);
+    Serial.printf( "[BLE] Service UUID     : %s\n",  BLE_SERVICE_UUID);
+    Serial.printf( "[BLE] Telemetry UUID   : %s\n",    BLE_TELEM_UUID);
+    Serial.printf( "[BLE] Alert UUID       : %s\n",    BLE_ALERT_UUID);
+}
