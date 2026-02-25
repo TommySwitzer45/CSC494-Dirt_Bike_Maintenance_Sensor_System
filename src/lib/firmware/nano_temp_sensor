@@ -1,0 +1,45 @@
+/*
+ * ============================================================
+ *  CSC494 — Dirt Bike Sensor System
+ *  Arduino Nano Firmware
+ *  Job: Read DS18B20 temperature and send to XIAO via Serial
+ * ============================================================
+ *  DS18B20 DAT → D3 on Nano
+ *  DS18B20 VCC → 5V on Nano
+ *  DS18B20 GND → GND on Nano
+ *
+ *  Nano TX (pin 1) → XIAO D7
+ *  Nano GND        → XIAO GND
+ * ============================================================
+ */
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#define DS18B20_PIN  3
+
+OneWire           oneWire(DS18B20_PIN);
+DallasTemperature tempSensor(&oneWire);
+
+void setup() {
+    Serial.begin(9600);
+    tempSensor.begin();
+    tempSensor.setResolution(12);
+    delay(500);
+}
+
+void loop() {
+    tempSensor.requestTemperatures();
+    delay(850);
+
+    float tempC = tempSensor.getTempCByIndex(0);
+
+    if (tempC > -100.0f) {
+        Serial.print("TEMP:");
+        Serial.println(tempC, 2);
+    } else {
+        Serial.println("TEMP:ERR");
+    }
+
+    delay(150);
+}
