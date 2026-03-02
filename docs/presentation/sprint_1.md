@@ -37,27 +37,14 @@ gap: 2em;
 
 ---
 
-## Challenges
+## Challenges & Alterations in Plans
 
 Integrating sensors into a real dirt bike revealed challenges not apparent during initial design.
-- The core problem — avoiding invasive modifications:
 
-- Preserving the structural integrity of engine components
-- Preventing potential leaks or contamination
-- Maintaining warranty and resale value
-- Minimizing risk of mechanical failure during aggressive off-road use
-
----
-
-## Alterations in Plans
-
-**Original design included:**
-
-- Ultrasonic oil level sensor inside the oil pan
-Coolant level sensor in the radiator/overflow reservoir
+**The core problem — avoiding invasive modifications:**
+- Preserving the structural integrity of engine
 
 **Why these were dropped:**
-
 - Oil level sensor requires access inside the oil pan — a custom oil fill cap was considered but requires fabrication tools not currently available
 - Coolant sensor has the same constraints — no way to access the reservoir without drilling or permanent modification
 
