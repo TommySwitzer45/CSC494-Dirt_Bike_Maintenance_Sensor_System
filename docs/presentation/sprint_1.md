@@ -128,7 +128,6 @@ These mounting challenges are the primary reason the project scope was changed.
 
 ## Sprint 2
 
-- Build a mobile BLE dashboard to display live - pressure and temperature readings
+- Build a mobile dashboard to display live - pressure and temperature readings
 - Test the system on a real dirt bike engine
-- Investigate waterproof enclosure options for field deployment
 - Validate pressure thresholds using a real dirty air filter
