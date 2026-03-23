@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DirtBike_001 Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:     #E94560;
+    --orange:  #FF6B35;
+    --yellow:  #FFD700;
+    --green:   #00FF88;
+    --blue:    #00BFFF;
+    --bg:      #080C14;
+    --panel:   #0D1421;
+    --border:  #1A2840;
+    --text:    #C8D8E8;
+    --dim:     #4A6080;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(233,69,96,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(233,69,96,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 16px; }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--red);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { line-height: 1; }
+  .logo-text .title { font-size: 16px; font-weight: 700; letter-spacing: 2px; color: #fff; }
+  .logo-text .sub   { font-size: 11px; color: var(--dim); letter-spacing: 1px; font-family: 'Share Tech Mono'; }
+
+  .status-dot {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Share Tech Mono'; font-size: 11px;
+  }
+
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--dim);
+    box-shadow: 0 0 0 0 var(--dim);
+    transition: all 0.3s;
+  }
+
+  .dot.connected {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 8px var(--green); }
+    50%       { box-shadow: 0 0 16px var(--green), 0 0 24px var(--green); }
+  }
+
+  /* ── Connect Screen ── */
+  #connect-screen {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 70vh; gap: 24px; text-align: center;
+  }
+
+  .connect-ring {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  .connect-ring::before {
+    content: '';
+    position: absolute; inset: -8px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--red);
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .connect-ring .icon { font-size: 48px; }
+
+  .connect-title { font-size: 24px; font-weight: 700; letter-spacing: 3px; color: #fff; }
+  .connect-sub   { font-size: 13px; color: var(--dim); font-family: 'Share Tech Mono'; }
+
+  .btn-connect {
+    background: var(--red);
+    color: #fff;
+    border: none; border-radius: 10px;
+    padding: 14px 32px;
+    font-family: 'Rajdhani'; font-size: 15px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .btn-connect:hover  { background: #ff2244; transform: translateY(-1px); }
+  .btn-connect:active { transform: translateY(0); }
+  .btn-connect:disabled { background: var(--dim); cursor: not-allowed; transform: none; }
+
+  .not-supported {
+    background: rgba(233,69,96,0.1);
+    border: 1px solid rgba(233,69,96,0.3);
+    border-radius: 10px; padding: 16px;
+    font-size: 13px; line-height: 1.6; color: var(--text);
+    font-family: 'Share Tech Mono';
+    max-width: 320px;
+  }
+
+  /* ── Dashboard ── */
+  #dashboard { display: none; flex-direction: column; gap: 14px; }
+
+  /* ── Gauge Card ── */
+  .gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .gauge-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .gauge-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent, var(--dim));
+    transition: background 0.3s;
+  }
+
+  .gauge-label {
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--dim); margin-bottom: 12px;
+    font-family: 'Share Tech Mono';
+  }
+
+  /* SVG Arc Gauge */
+  .arc-gauge { position: relative; display: inline-block; }
+  .arc-gauge svg { display: block; }
+
+  .gauge-value {
+    position: absolute;
+    inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  .gauge-num {
+    font-size: 28px; font-weight: 700; line-height: 1;
+    color: #fff; transition: color 0.3s;
+    font-family: 'Share Tech Mono';
+  }
+
+  .gauge-unit {
+    font-size: 11px; color: var(--dim); letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .gauge-status {
+    margin-top: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    transition: color 0.3s;
+  }
+
+  /* ── Status Bar ── */
+  .status-bar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat { }
+  .stat-label { font-size: 10px; letter-spacing: 1.5px; color: var(--dim); font-family: 'Share Tech Mono'; }
+  .stat-value { font-size: 18px; font-weight: 700; color: #fff; margin-top: 2px; font-family: 'Share Tech Mono'; }
+
+  /* ── Alert Banner ── */
+  .alert-banner {
+    border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } }
+
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .alert-body { flex: 1; }
+  .alert-level { font-size: 10px; letter-spacing: 2px; font-weight: 700; font-family: 'Share Tech Mono'; }
+  .alert-msg   { font-size: 13px; margin-top: 2px; line-height: 1.4; }
+
+  .alert-CRITICAL { background: rgba(233,69,96,0.12); border-color: rgba(233,69,96,0.4); }
+  .alert-WARNING  { background: rgba(255,107,53,0.12); border-color: rgba(255,107,53,0.4); }
+  .alert-WATCH    { background: rgba(255,215,0,0.10);  border-color: rgba(255,215,0,0.4);  }
+  .alert-INFO     { background: rgba(0,191,255,0.10);  border-color: rgba(0,191,255,0.3);  }
+
+  /* ── Chart ── */
+  .chart-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .chart-title { font-size: 11px; letter-spacing: 2px; color: var(--dim); font-family: 'Share Tech Mono'; }
+
+  .chart-tabs { display: flex; gap: 6px; }
+  .chart-tab {
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--dim);
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Rajdhani';
+  }
+  .chart-tab.active {
+    background: var(--red); border-color: var(--red); color: #fff;
+  }
+
+  canvas#chart { width: 100% !important; height: 140px !important; }
+
+  /* ── Raw Data ── */
+  .raw-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .raw-title { font-size: 10px; letter-spacing: 2px; color: var(--dim); margin-bottom: 10px; font-family: 'Share Tech Mono'; }
+
+  .raw-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .raw-row:last-child { border-bottom: none; }
+  .raw-key   { color: var(--dim); font-family: 'Share Tech Mono'; font-size: 12px; }
+  .raw-val   { color: #fff; font-family: 'Share Tech Mono'; font-weight: 700; }
+
+  /* ── Disconnect ── */
+  .btn-disconnect {
+    width: 100%; padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--dim); font-family: 'Rajdhani';
+    font-size: 13px; letter-spacing: 2px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-disconnect:hover { border-color: var(--red); color: var(--red); }
+
+  /* Color helpers */
+  .c-clean    { color: var(--green) !important; }
+  .c-watch    { color: var(--yellow) !important; }
+  .c-warning  { color: var(--orange) !important; }
+  .c-critical { color: var(--red) !important; }
+  .c-cold     { color: var(--blue) !important; }
+  .c-normal   { color: var(--green) !important; }
+
+  .scanning-text {
+    font-family: 'Share Tech Mono'; font-size: 13px; color: var(--dim);
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🏍️</div>
+      <div class="logo-text">
+        <div class="title">DIRTBIKE</div>
+        <div class="sub">SENSOR SYSTEM</div>
+      </div>
+    </div>
+    <div class="status-dot">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text" style="font-family:'Share Tech Mono';font-size:11px;color:var(--dim)">OFFLINE</span>
+    </div>
+  </header>
+
+  <!-- Connect Screen -->
+  <div id="connect-screen">
+    <div class="connect-ring">
+      <div class="icon">📡</div>
+    </div>
+    <div>
+      <div class="connect-title">DIRTBIKE_001</div>
+      <div class="connect-sub" style="margin-top:6px">BLUETOOTH LOW ENERGY</div>
+    </div>
+    <div id="ble-warning" class="not-supported" style="display:none">
+      ⚠️ Web Bluetooth is not supported in this browser.<br><br>
+      On iPhone: use <strong>Bluefy</strong> or <strong>WebBLE</strong> browser (free on App Store).<br>
+      On Android/Desktop: use <strong>Chrome</strong>.
+    </div>
+    <button class="btn-connect" id="btn-connect" onclick="connect()">
+      SCAN &amp; CONNECT
+    </button>
+    <div class="scanning-text" id="scanning-text" style="display:none">
+      SCANNING FOR DIRTBIKE_001...
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+
+    <!-- Alert -->
+    <div id="alert-area"></div>
+
+    <!-- Gauges -->
+    <div class="gauge-row">
+      <!-- Pressure Gauge -->
+      <div class="gauge-card" id="pressure-card">
+        <div class="gauge-label">AIR FILTER</div>
+        <div class="arc-gauge">
+          <svg width="130" height="80" viewBox="0 0 130 80">
+            <path d="M 15 75 A 50 50 0 0 1 115 75" fill="none" stroke="#1A2840" stroke-width="10" stroke-linecap="round"/>
+            <path id="pressure-arc" d="M 15 75 A 50 50 0 0 1 115 75" fill="none" stroke="#00FF88" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="157" stroke-dashoffset="157" style="transition:all 0.5s ease"/>
+          </svg>
+          <div class="gauge-value">
+            <div class="gauge-num" id="clog-num">0</div>
+            <div class="gauge-unit">% CLOG</div>
+          </div>
+        </div>
+        <div class="gauge-status c-clean" id="filter-status">CLEAN</div>
+      </div>
+
+      <!-- Temp Gauge -->
+      <div class="gauge-card" id="temp-card">
+        <div class="gauge-label">OIL TEMP</div>
+        <div class="arc-gauge">
+          <svg width="130" height="80" viewBox="0 0 130 80">
+            <!-- Zone rings -->
+            <path d="M 15 75 A 50 50 0 0 1 115 75" fill="none" stroke="#1A2840" stroke-width="10" stroke-linecap="round"/>
+            <path id="temp-arc" d="M 15 75 A 50 50 0 0 1 115 75" fill="none" stroke="#00BFFF" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="157" stroke-dashoffset="157" style="transition:all 0.5s ease"/>
+          </svg>
+          <div class="gauge-value">
+            <div class="gauge-num" id="temp-num">--</div>
+            <div class="gauge-unit">°C</div>
+          </div>
+        </div>
+        <div class="gauge-status c-cold" id="temp-status">--</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="status-bar">
+      <div class="stat">
+        <div class="stat-label">PRESSURE ADJ</div>
+        <div class="stat-value" id="stat-pressure">-- kPa</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">UPTIME</div>
+        <div class="stat-value" id="stat-uptime">--</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">PRESSURE RAW</div>
+        <div class="stat-value" id="stat-raw">-- kPa</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">READINGS</div>
+        <div class="stat-value" id="stat-count">0</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">HISTORY (LAST 60)</div>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="switchChart('temp')">TEMP</button>
+          <button class="chart-tab"        onclick="switchChart('clog')">CLOG</button>
+        </div>
+      </div>
+      <canvas id="chart"></canvas>
+    </div>
+
+    <!-- Disconnect -->
+    <button class="btn-disconnect" onclick="disconnect()">⏻ DISCONNECT</button>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
+const TELEM_UUID   = '12345678-1234-1234-1234-123456789abd';
+const ALERT_UUID   = '12345678-1234-1234-1234-123456789abe';
+
+let device, server, telemChar, alertChar;
+let chartMode = 'temp';
+let readingCount = 0;
+let chartInst;
+
+const tempHistory = [];
+const clogHistory = [];
+
+// ── Check BLE support ──
+if (!navigator.bluetooth) {
+  document.getElementById('ble-warning').style.display = 'block';
+  document.getElementById('btn-connect').disabled = true;
+}
+
+// ── Chart setup ──
+function initChart() {
+  const ctx = document.getElementById('chart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderColor: '#E94560',
+        backgroundColor: 'rgba(233,69,96,0.08)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#4A6080', font: { family: 'Share Tech Mono', size: 10 } },
+        }
+      }
+    }
+  });
+}
+
+function switchChart(mode) {
+  chartMode = mode;
+  document.querySelectorAll('.chart-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && mode === 'temp') || (i === 1 && mode === 'clog'));
+  });
+  updateChart();
+}
+
+function updateChart() {
+  const data   = chartMode === 'temp' ? tempHistory : clogHistory;
+  const color  = chartMode === 'temp' ? '#FF6B35' : '#E94560';
+  chartInst.data.labels   = data.map((_, i) => i);
+  chartInst.data.datasets[0].data = data;
+  chartInst.data.datasets[0].borderColor = color;
+  chartInst.data.datasets[0].backgroundColor = color + '18';
+  chartInst.options.scales.y.min = chartMode === 'clog' ? 0 : undefined;
+  chartInst.options.scales.y.max = chartMode === 'clog' ? 100 : undefined;
+  chartInst.update('none');
+}
+
+// ── Connect ──
+async function connect() {
+  const btn = document.getElementById('btn-connect');
+  const scan = document.getElementById('scanning-text');
+
+  btn.disabled = true;
+  scan.style.display = 'block';
+  setStatus('SCANNING', false);
+
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'DirtBike_001' }],
+      optionalServices: [SERVICE_UUID]
+    });
+
+    scan.textContent = 'CONNECTING...';
+    setStatus('CONNECTING', false);
+
+    server = await device.gatt.connect();
+
+    device.addEventListener('gattserverdisconnected', onDisconnect);
+
+    const service = await server.getPrimaryService(SERVICE_UUID);
+
+    telemChar = await service.getCharacteristic(TELEM_UUID);
+    await telemChar.startNotifications();
+    telemChar.addEventListener('characteristicvaluechanged', onTelem);
+
+    alertChar = await service.getCharacteristic(ALERT_UUID);
+    await alertChar.startNotifications();
+    alertChar.addEventListener('characteristicvaluechanged', onAlert);
+
+    showDashboard();
+    setStatus('CONNECTED', true);
+    initChart();
+
+  } catch (err) {
+    console.error(err);
+    scan.style.display = 'none';
+    btn.disabled = false;
+    setStatus('FAILED — TRY AGAIN', false);
+    if (err.name === 'NotFoundError') {
+      setStatus('NOT FOUND — TAP TO RETRY', false);
+    }
+  }
+}
+
+// ── Telemetry ──
+function onTelem(e) {
+  const raw  = new TextDecoder().decode(e.target.value);
+  const data = JSON.parse(raw);
+
+  readingCount++;
+  document.getElementById('stat-count').textContent = readingCount;
+
+  // Update gauges
+  updatePressureGauge(data.clogPct, data.filterStatus);
+  updateTempGauge(data.oilTempC, data.oilStatus);
+
+  // Stats
+  document.getElementById('stat-pressure').textContent = (data.pAdj >= 0 ? '+' : '') + data.pAdj.toFixed(3) + ' kPa';
+  document.getElementById('stat-raw').textContent      = data.pRaw.toFixed(3) + ' kPa';
+  document.getElementById('stat-uptime').textContent   = formatUptime(data.ts);
+
+  // History
+  tempHistory.push(data.oilTempC);
+  clogHistory.push(data.clogPct);
+  if (tempHistory.length > 60) tempHistory.shift();
+  if (clogHistory.length > 60) clogHistory.shift();
+  if (chartInst) updateChart();
+}
+
+// ── Alert ──
+function onAlert(e) {
+  const raw  = new TextDecoder().decode(e.target.value);
+  const data = JSON.parse(raw);
+  showAlert(data.level, data.sensor, data.msg);
+}
+
+function showAlert(level, sensor, msg) {
+  const area = document.getElementById('alert-area');
+  const div  = document.createElement('div');
+  div.className = `alert-banner alert-${level}`;
+  const icons = { CRITICAL: '🚨', WARNING: '⚠️', WATCH: '👁️', INFO: 'ℹ️' };
+  div.innerHTML = `
+    <div class="alert-icon">${icons[level] || 'ℹ️'}</div>
+    <div class="alert-body">
+      <div class="alert-level" style="color:${levelColor(level)}">${level} — ${sensor}</div>
+      <div class="alert-msg">${msg}</div>
+    </div>`;
+  area.innerHTML = '';
+  area.appendChild(div);
+  if (level === 'INFO') setTimeout(() => { if (area.contains(div)) area.removeChild(div); }, 5000);
+}
+
+// ── Gauges ──
+function updatePressureGauge(clogPct, status) {
+  const arc    = document.getElementById('pressure-arc');
+  const num    = document.getElementById('clog-num');
+  const stat   = document.getElementById('filter-status');
+  const card   = document.getElementById('pressure-card');
+  const color  = statusColor(status);
+  const offset = 157 - (clogPct / 100) * 157;
+
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = color;
+  num.textContent  = clogPct;
+  num.style.color  = color;
+  stat.textContent = status;
+  stat.style.color = color;
+  card.style.setProperty('--accent', color);
+  card.style.borderColor = color + '40';
+}
+
+function updateTempGauge(tempC, status) {
+  const arc    = document.getElementById('temp-arc');
+  const num    = document.getElementById('temp-num');
+  const stat   = document.getElementById('temp-status');
+  const card   = document.getElementById('temp-card');
+  const color  = statusColor(status);
+  const pct    = Math.min(tempC / 150, 1);
+  const offset = 157 - pct * 157;
+
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = color;
+  num.textContent  = tempC.toFixed(1);
+  num.style.color  = color;
+  stat.textContent = status;
+  stat.style.color = color;
+  card.style.setProperty('--accent', color);
+  card.style.borderColor = color + '40';
+}
+
+// ── Helpers ──
+function statusColor(s) {
+  const map = { CLEAN:'#00FF88', WATCH:'#FFD700', WARNING:'#FF6B35', CRITICAL:'#E94560',
+                COLD:'#00BFFF', NORMAL:'#00FF88', SENSOR_ERR:'#E94560' };
+  return map[s] || '#4A6080';
+}
+
+function levelColor(l) {
+  return { CRITICAL:'#E94560', WARNING:'#FF6B35', WATCH:'#FFD700', INFO:'#00BFFF' }[l] || '#fff';
+}
+
+function formatUptime(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60)  return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's';
+  return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm';
+}
+
+function setStatus(text, connected) {
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-dot').className = 'dot' + (connected ? ' connected' : '');
+}
+
+function showDashboard() {
+  document.getElementById('connect-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'flex';
+}
+
+function showConnect() {
+  document.getElementById('connect-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('btn-connect').disabled = false;
+  document.getElementById('scanning-text').style.display = 'none';
+}
+
+function onDisconnect() {
+  setStatus('DISCONNECTED', false);
+  showConnect();
+}
+
+async function disconnect() {
+  if (device && device.gatt.connected) {
+    await device.gatt.disconnect();
+  }
+  showConnect();
+  setStatus('OFFLINE', false);
+}
+</script>
+</body>
+</html>
