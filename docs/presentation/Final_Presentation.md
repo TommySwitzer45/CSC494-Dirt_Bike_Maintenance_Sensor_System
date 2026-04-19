@@ -10,13 +10,13 @@ style: |
   }
   h1 {
     font-size: 2.4em;
-    color: #E94560;
+    color: #004a99;
     letter-spacing: 2px;
   }
   h2 {
     font-size: 1.8em;
-    color: #E94560;
-    border-bottom: 3px solid #E94560;
+    color: #004a99;
+    border-bottom: 3px solid #E004a99;
     padding-bottom: 12px;
   }
   h3 {
@@ -29,16 +29,18 @@ style: |
   }
   table {
     font-size: 0.88em;
+    color: #E004a99;
     width: 100%;
     border-collapse: collapse;
   }
   th {
     background: #1A2840;
-    color: #E94560;
+    color: #004a99;
     padding: 8px 10px;
   }
   td {
     padding: 8px 10px;
+    color: #004a99;
     border-bottom: 1px solid #1A2840;
   }
   code {
