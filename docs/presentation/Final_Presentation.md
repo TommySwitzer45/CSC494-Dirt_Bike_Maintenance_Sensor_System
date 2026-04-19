@@ -201,18 +201,39 @@ Browser security, platform limits, and hosting requirements made it far more com
 
 ---
 
+## Hardware Setup
+
+**Non-invasive installation on the 2018 Yamaha YZ450F**
+
+| Pressure Sensor | Oil Temp Probe |
+|---|---|
+| ![P w:280](https://raw.githubusercontent.com/TommySwitzer45/CSC494-Dirt_Bike_Maintenance_Sensor_System/main/docs/images/Pressure_Sensor_Pic.JPG) | ![T w:280](https://raw.githubusercontent.com/TommySwitzer45/CSC494-Dirt_Bike_Maintenance_Sensor_System/main/docs/images/Probe_Setup.PNG) |
+
+---
+
+## Electronics & Power
+
+| Breadboard | SAE Power |
+|---|---|
+| ![B w:280](https://raw.githubusercontent.com/TommySwitzer45/CSC494-Dirt_Bike_Maintenance_Sensor_System/main/docs/images/Bread_Board.JPG) | ![S w:280](https://raw.githubusercontent.com/TommySwitzer45/CSC494-Dirt_Bike_Maintenance_Sensor_System/main/docs/images/Power_setup.PNG) |
+
+---
+
 ## Demonstration
 
-**Watch the video:**
+**Live Demo Videos**
 
-> 📹 **[INSERT YOUR VIDEO LINK HERE]**  
-> *(Upload to YouTube as Unlisted and paste the link)*
+**Cold Start**  
+[▶ Watch Cold Start](https://youtube.com/shorts/FnaW9bqta3Q)
 
-**What you’ll see:**
-- Live dashboard connected via Bluetooth in Bluefy
-- Pressure sensor responding to throttle input
-- Temperature rising during engine warm-up
-- Alerts triggering at the correct thresholds
+**Warm Engine**  
+[▶ Watch Warm Engine](https://youtube.com/shorts/1X038i7_y94)
+
+**What the videos show:**
+- Real-time dashboard connected via Bluetooth in Bluefy
+- Pressure sensor reacting to throttle
+- Oil temperature increasing during warm-up
+- Threshold alerts activating correctly
 
 ---
 
