@@ -54,8 +54,7 @@ style: |
 # Dirt Bike Maintenance Sensor System
 
 **Final Presentation**  
-CSC494 — Tommy Switzer  
-2018 Yamaha YZ450F
+CSC494 
 
 ---
 
