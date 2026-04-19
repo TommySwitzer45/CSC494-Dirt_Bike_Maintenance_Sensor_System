@@ -1,38 +1,41 @@
 /*
- * BLE Continuous Advertising Test
+ * BLE Debug Test
  * Board: Seeed XIAO ESP32-C6
  */
 
 #include <NimBLEDevice.h>
 
-NimBLEAdvertising *pAdv;
-
-void startAdv() {
-    if (!pAdv->isAdvertising()) {
-        NimBLEDevice::startAdvertising();
-        Serial.println("Advertising restarted");
-    }
-}
-
 void setup() {
     Serial.begin(115200);
     delay(2000);
-    Serial.println("=== BLE Continuous Test ===");
+    Serial.println("=== BLE Debug Test ===");
 
+    Serial.println("Step 1: Initializing NimBLE...");
     NimBLEDevice::init("DirtBike_001");
+    Serial.println("Step 1: DONE");
+
+    Serial.println("Step 2: Setting power...");
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+    Serial.println("Step 2: DONE");
 
-    pAdv = NimBLEDevice::getAdvertising();
-    pAdv->setMinInterval(160);   // 100ms
-    pAdv->setMaxInterval(320);   // 200ms
+    Serial.println("Step 3: Getting advertising object...");
+    NimBLEAdvertising *pAdv = NimBLEDevice::getAdvertising();
+    Serial.println("Step 3: DONE");
 
-    NimBLEDevice::startAdvertising();
-    Serial.println("Advertising started — scan with nRF Connect NOW");
+    Serial.println("Step 4: Starting advertising...");
+    bool started = NimBLEDevice::startAdvertising();
+    Serial.printf("Step 4: %s\n", started ? "SUCCESS" : "FAILED");
+
+    if (started) {
+        Serial.println(">>> DirtBike_001 is now visible <<<");
+        Serial.println("Scan with nRF Connect NOW");
+    } else {
+        Serial.println(">>> ADVERTISING FAILED — BLE hardware issue <<<");
+    }
 }
 
 void loop() {
-    startAdv();  // restart if stopped
+    delay(3000);
     Serial.printf("Advertising: %s\n",
-        pAdv->isAdvertising() ? "YES" : "NO");
-    delay(1000);
+        NimBLEDevice::getAdvertising()->isAdvertising() ? "YES" : "NO");
 }
