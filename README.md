@@ -160,9 +160,9 @@ The web dashboard is built with HTML, CSS, JavaScript, and the Web Bluetooth API
 
 ## Demo Video
 
-Warm Bike: [Bike is Warm and Ready to Ride](https://youtube.com/shorts/QOzN9UsvcXs)
+Warm Bike: [https://youtube.com/shorts/1X038i7_y94?feature=share](https://youtube.com/shorts/QOzN9UsvcXs?feature=share)
 
-Cold Bike: [Bike is Warming up](https://youtube.com/shorts/u4xNnDTEOb8?feature=share)
+Cold Bike: [https://youtube.com/shorts/FnaW9bqta3Q?feature=share](https://youtube.com/shorts/u4xNnDTEOb8?feature=share)
 
 ---
 
