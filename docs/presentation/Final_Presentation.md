@@ -224,10 +224,10 @@ Browser security, platform limits, and hosting requirements made it far more com
 **Live Demo Videos**
 
 **Cold Start**  
-[▶ Watch Cold Start](https://youtube.com/shorts/FnaW9bqta3Q)
+[▶ Watch Cold Start](https://youtube.com/shorts/u4xNnDTEOb8?feature=share)
 
 **Warm Engine**  
-[▶ Watch Warm Engine](https://youtube.com/shorts/1X038i7_y94)
+[▶ Watch Warm Engine](https://youtube.com/shorts/QOzN9UsvcXs?feature=share)
 
 **What the videos show:**
 - Real-time dashboard connected via Bluetooth in Bluefy
