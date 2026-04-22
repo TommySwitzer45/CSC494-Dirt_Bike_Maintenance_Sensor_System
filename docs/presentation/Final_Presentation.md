@@ -258,5 +258,3 @@ Browser security, platform limits, and hosting requirements made it far more com
 - Custom oil fill cap for direct oil temperature
 - Machine learning for predictive alerts
 - Support for bikes without batteries
-
----
